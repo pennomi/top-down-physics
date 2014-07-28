@@ -5,11 +5,65 @@ from pymunk.vec2d import Vec2d
 MULTIPLIER = 32
 
 
+def points(plist, batch=None):
+    color = (255, 0, 255)
+
+    pyglet.gl.glPointSize(5)
+    mode = pyglet.gl.GL_POINTS
+
+    bg = pyglet.graphics.OrderedGroup(0)
+
+    vs = [i*MULTIPLIER for sub in plist for i in sub]
+    l = len(vs)//2
+
+    if batch is None:
+        pyglet.graphics.draw(l, mode,
+                            ('v2f', vs),
+                            ('c3B', color*l))
+    else:
+        batch.add(len(vs)/2, mode, bg,
+                 ('v2f', vs),
+                 ('c3B', color*l))
+
+
+def tiles(space_map, batch=None):
+    for t in space_map:
+        position = t.position * MULTIPLIER
+
+        if t.collision_type == 0:
+            continue
+
+        if t.colliding:
+            color = (255, 255, 0)
+        else:
+            color = (255, 255, 255)
+
+        mode = pyglet.gl.GL_TRIANGLE_STRIP
+
+        bg = pyglet.graphics.OrderedGroup(0)
+
+        vs = (
+            position.x, position.y,
+            position.x, position.y+MULTIPLIER,
+            position.x+MULTIPLIER, position.y,
+            position.x+MULTIPLIER, position.y+MULTIPLIER,
+        )
+        l = len(vs)//2
+
+        if batch is None:
+            pyglet.graphics.draw(l, mode,
+                                ('v2f', vs),
+                                ('c3B', color*l))
+        else:
+            batch.add(len(vs)/2, mode, bg,
+                     ('v2f', vs),
+                     ('c3B', color*l))
+
+
 def circle(circle_entity, batch=None):
     center = circle_entity.position * MULTIPLIER
     radius = circle_entity.radius * MULTIPLIER
 
-    r = 0
     if circle_entity.colliding:
         color = (255, 0, 0)
     else:
