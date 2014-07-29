@@ -1,4 +1,4 @@
-from pymunk import Vec2d  # TODO: internalize this
+from physics.vec3d import Vec3d
 from physics import debug_draw
 from itertools import combinations, product
 
@@ -6,27 +6,27 @@ from itertools import combinations, product
 class Entity:
     def __init__(self, position=None, angle=0.0, radius=0.5, mass=float('inf')):
         if position is None:
-            position = Vec2d(0, 0)
+            position = Vec3d(0, 0, 0)
         self.position = position
         self.angle = angle
         self.radius = radius
         self.mass = mass
-        self.movement_velocity = Vec2d(0, 0)
+        self.movement_velocity = Vec3d(0, 0, 0)
 
         # Special Variables to persist state
         self.colliding = False
 
     def collides_with(self, other: 'Entity'):
-        d = self.position.get_distance(other.position)
+        d = self.position.distance(other.position)
         return self.radius + other.radius >= d
 
 
 def intersects(entity: Entity, tile_coords) -> bool:
     # TODO: Maybe using only the closest vertex would be faster!
     # FIXME: This logic was incorrect for the segment intersecting the circle
-    tile_coords = Vec2d(tile_coords)
-    verts = [tile_coords, tile_coords + Vec2d(1, 0),
-             tile_coords + Vec2d(1, 1), tile_coords + Vec2d(0, 1)]
+    tile_coords = Vec3d(tile_coords)
+    verts = [tile_coords, tile_coords + Vec3d(1, 0, 0),
+             tile_coords + Vec3d(1, 1, 0), tile_coords + Vec3d(0, 1, 0)]
     p = entity.position
     return any((
         does_segment_intersect_circle(verts[0], verts[1], p, entity.radius),
@@ -40,12 +40,12 @@ def closest_point_on_seg(seg_a, seg_b, circ_pos):
     seg_v = seg_b - seg_a
     pt_v = circ_pos - seg_a
     seg_v_unit = seg_v.normalized()
-    proj = pt_v.dot(seg_v_unit)
-    if proj <= 0:
-        return Vec2d(seg_a)  # copy
-    if proj >= seg_v.length:
-        return Vec2d(seg_b)  # copy
-    return seg_v_unit * proj + seg_a
+    projection = pt_v.dot(seg_v_unit)
+    if projection <= 0:
+        return Vec3d(seg_a)  # copy
+    if projection >= seg_v.length:
+        return Vec3d(seg_b)  # copy
+    return seg_v_unit * projection + seg_a
 
 
 def does_segment_intersect_circle(seg_a, seg_b, circ_pos, circ_rad):
@@ -54,6 +54,21 @@ def does_segment_intersect_circle(seg_a, seg_b, circ_pos, circ_rad):
     if distance > circ_rad:
         return False
     return True
+
+
+class Tile:
+    def __init__(self, x: int, y: int, collision_type=0):
+        self.collision_type = collision_type
+        self.position = Vec3d(x, y, 0)
+
+        # temporary state (please don't set these)
+        self.colliding = False
+
+    def __str__(self):
+        return "<Tile @ ({}, {})>".format(self.position.x, self.position.y)
+
+    def __repr__(self):
+        return str(self)
 
 
 class Space:
@@ -72,9 +87,10 @@ class Space:
         y_values = range(int(e.position.y - r), int(e.position.y + r) + 1)
         matches = set()
         for h in product(x_values, y_values):
+            h = h + (0,)
             # hard match... a corner may actually not be a hit
             for t in self._tiles:
-                if (t.collision_type and t.position == Vec2d(h) and
+                if (t.collision_type and t.position == Vec3d(h) and
                         intersects(e, h)):
                     matches.add(t)
                     t.colliding = True
@@ -108,7 +124,7 @@ class Space:
         for c in collisions:
             a, b = c
             # get amount penetrated
-            d = a.position.get_distance(b.position)
+            d = a.position.distance(b.position)
             penetration = a.radius + b.radius - d
 
             # apply movement to the objects to push them away the proper amount
@@ -127,8 +143,8 @@ class Space:
             collisions = self.collision_tiles_for_entity(e)
             for tile in collisions:
                 tile_p = tile.position
-                verts = [tile_p, tile_p + Vec2d(1, 0),
-                         tile_p + Vec2d(1, 1), tile_p + Vec2d(0, 1)]
+                verts = [tile_p, tile_p + Vec3d(1, 0, 0),
+                         tile_p + Vec3d(1, 1, 0), tile_p + Vec3d(0, 1, 0)]
                 c1 = closest_point_on_seg(verts[0], verts[1], e.position)
                 c2 = closest_point_on_seg(verts[1], verts[2], e.position)
                 c3 = closest_point_on_seg(verts[2], verts[3], e.position)

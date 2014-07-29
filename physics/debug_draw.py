@@ -1,6 +1,6 @@
 import math
 import pyglet
-from pymunk.vec2d import Vec2d
+from physics.vec3d import Vec3d
 
 MULTIPLIER = 32
 
@@ -14,15 +14,15 @@ def points(plist, batch=None):
     bg = pyglet.graphics.OrderedGroup(0)
 
     vs = [i*MULTIPLIER for sub in plist for i in sub]
-    l = len(vs)//2
+    l = len(vs)//3
 
     if batch is None:
         pyglet.graphics.draw(l, mode,
-                            ('v2f', vs),
+                            ('v3f', vs),
                             ('c3B', color*l))
     else:
         batch.add(len(vs)/2, mode, bg,
-                 ('v2f', vs),
+                 ('v3f', vs),
                  ('c3B', color*l))
 
 
@@ -80,7 +80,7 @@ def circle(circle_entity, batch=None):
     ps = []
 
     for i in range(num_segments):
-        ps += [Vec2d(center.x + x, center.y + y)]
+        ps += [Vec3d(center.x + x, center.y + y, 0)]
         t = x
         x = c * x - s * y
         y = s * t + c * y
@@ -95,7 +95,7 @@ def circle(circle_entity, batch=None):
     for p in [ps[0]] + ps + [ps[-1]]:
             vs += [p.x, p.y]
 
-    c = center + Vec2d(radius, 0).rotated(circle_entity.angle)
+    c = center + Vec3d(radius, 0, 0).rotated_around_z(circle_entity.angle)
     cvs = [center.x, center.y, c.x, c.y]
 
     bg = pyglet.graphics.OrderedGroup(0)
