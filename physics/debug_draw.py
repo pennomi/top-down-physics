@@ -64,7 +64,9 @@ def circle(circle_entity, batch=None):
     center = circle_entity.position * MULTIPLIER
     radius = circle_entity.radius * MULTIPLIER
 
-    if circle_entity.colliding:
+    if circle_entity.color:
+        color = circle_entity.color
+    elif circle_entity.colliding:
         color = (255, 0, 0)
     else:
         color = (0, 255, 0)

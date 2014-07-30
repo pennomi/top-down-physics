@@ -4,7 +4,7 @@ from itertools import combinations, product
 
 
 class Entity:
-    def __init__(self, position=None, angle=0.0, radius=0.5, mass=float('inf')):
+    def __init__(self, *, position=None, angle=0.0, radius=0.5, mass=float('inf')):
         if position is None:
             position = Vec3d(0, 0, 0)
         self.position = position
@@ -15,6 +15,7 @@ class Entity:
 
         # Special Variables to persist state
         self.colliding = False
+        self.color = None
 
     def collides_with(self, other: 'Entity'):
         d = self.position.distance(other.position)
@@ -49,6 +50,7 @@ def closest_point_on_seg(seg_a, seg_b, circ_pos):
 
 
 def does_segment_intersect_circle(seg_a, seg_b, circ_pos, circ_rad):
+    # TODO: these probably don't take 3D points into consideration
     closest = closest_point_on_seg(seg_a, seg_b, circ_pos)
     distance = (circ_pos - closest).length
     if distance > circ_rad:
@@ -74,7 +76,7 @@ class Tile:
 class Space:
     def __init__(self):
         self._entities = []
-        self._tiles = []
+        self.tiles = []
         self.points_to_render = []
 
     def add(self, entity: Entity):
@@ -89,7 +91,7 @@ class Space:
         for h in product(x_values, y_values):
             h = h + (0,)
             # hard match... a corner may actually not be a hit
-            for t in self._tiles:
+            for t in self.tiles:
                 if (t.collision_type and t.position == Vec3d(h) and
                         intersects(e, h)):
                     matches.add(t)
@@ -97,13 +99,13 @@ class Space:
         return matches
 
     def debug_draw(self):
-        debug_draw.tiles(self._tiles)
+        debug_draw.tiles(self.tiles)
         for e in self._entities:
             debug_draw.circle(e)
         debug_draw.points(self.points_to_render)
 
     def update(self, dt):
-        for t in self._tiles:
+        for t in self.tiles:
             t.colliding = False
         for e in self._entities:
             # reset state
