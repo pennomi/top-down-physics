@@ -1,3 +1,4 @@
+from __future__ import division
 from physics.vec3d import Vec3d
 from physics import debug_draw
 from itertools import combinations, product
